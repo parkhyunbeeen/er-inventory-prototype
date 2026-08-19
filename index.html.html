@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이터널 리턴 — 인벤토리 슬롯 지정 프로토타입</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1017;
+  --panel:#161b26;
+  --panel-2:#1d2431;
+  --line:#2a3344;
+  --line-2:#3a4762;
+  --txt:#dfe5f0;
+  --txt-2:#8d99b0;
+  --txt-3:#5d6982;
+  --accent:#e8443f;
+  --accent-soft:rgba(232,68,63,.14);
+  --cyan:#4cc4e0;
+  --slot:78px;
+
+  --c-food:#3f7d3a;      --c-food-b:#6cc463;
+  --c-use:#6b4bb8;       --c-use-b:#a68bf0;
+  --c-weapon:#a83535;    --c-weapon-b:#e8736e;
+  --c-armor:#2f5f9e;     --c-armor-b:#6fa8e8;
+  --c-mat:#9a6a1e;       --c-mat-b:#e0ab4a;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--txt);
+  font-family:'Noto Sans KR',system-ui,sans-serif;font-size:14px;line-height:1.6;
+}
+.topbar{
+  display:flex;align-items:baseline;gap:14px;
+  padding:16px 24px;border-bottom:1px solid var(--line);background:var(--panel);
+}
+.topbar h1{
+  margin:0;font-family:'Rajdhani',sans-serif;font-size:20px;letter-spacing:.06em;
+  font-weight:700;text-transform:uppercase;
+}
+.topbar h1 span{color:var(--accent)}
+.topbar p{margin:0;font-size:12px;color:var(--txt-3)}
+
+.stage{display:grid;grid-template-columns:340px minmax(0,1fr);gap:1px;background:var(--line);min-height:calc(100vh - 61px)}
+.pane{background:var(--bg);padding:20px 22px;min-width:0}
+
+.pane-head{display:flex;align-items:center;gap:8px;margin:0 0 4px}
+.pane-head h2{margin:0;font-size:14px;font-weight:700;letter-spacing:.02em}
+.pane-head .idx{
+  width:20px;height:20px;border-radius:3px;background:var(--accent);color:#fff;
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;
+}
+.pane-sub{margin:0 0 16px;font-size:12px;color:var(--txt-3)}
+
+.block{margin-bottom:20px}
+.block > label{display:block;font-size:11px;color:var(--txt-3);letter-spacing:.08em;margin-bottom:7px;text-transform:uppercase}
+
+/* ── slot picker ── */
+.slotpick{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.slotpick button{
+  height:36px;border:1px solid var(--line);background:var(--panel);color:var(--txt-2);
+  border-radius:4px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;cursor:pointer;
+  position:relative;transition:.12s;
+}
+.slotpick button:hover{border-color:var(--line-2);color:var(--txt)}
+.slotpick button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:#fff}
+.slotpick button .dot{
+  position:absolute;left:4px;top:4px;width:5px;height:5px;border-radius:50%;
+}
+
+select{
+  width:100%;height:38px;padding:0 10px;border-radius:4px;
+  background:var(--panel);border:1px solid var(--line);color:var(--txt);
+  font-family:inherit;font-size:13px;cursor:pointer;
+}
+select:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+select:disabled{color:var(--txt-3);cursor:not-allowed}
+
+.assign-list{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.assign-row{
+  display:flex;align-items:center;gap:9px;padding:6px 10px;border-bottom:1px solid var(--line);
+  font-size:12px;background:var(--panel);
+}
+.assign-row:last-child{border-bottom:0}
+.assign-row .n{
+  width:19px;height:19px;border-radius:3px;background:var(--panel-2);color:var(--txt-2);
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;
+  display:flex;align-items:center;justify-content:center;flex:none;
+}
+.assign-row .swatch{width:9px;height:9px;border-radius:2px;flex:none;background:var(--line-2)}
+.assign-row .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.assign-row .sub{color:var(--txt-3);font-size:11px}
+.assign-row.none .name{color:var(--txt-3)}
+
+.btn{
+  height:36px;padding:0 14px;border-radius:4px;border:1px solid var(--line-2);
+  background:transparent;color:var(--txt-2);font-family:inherit;font-size:12px;cursor:pointer;transition:.12s;
+}
+.btn:hover{background:var(--panel-2);color:var(--txt)}
+.btn:active{transform:scale(.98)}
+.btn-row{display:flex;gap:8px;margin-top:12px}
+
+/* ── palette ── */
+.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.item{
+  height:52px;border-radius:4px;border:1px solid;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  font-family:inherit;font-size:11.5px;font-weight:500;color:#fff;line-height:1.25;
+  padding:2px 4px;text-align:center;transition:.1s;
+}
+.item small{font-size:9.5px;opacity:.72;font-weight:400}
+.item:hover{filter:brightness(1.22)}
+.item:active{transform:scale(.96)}
+.item:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+.cat-food{background:var(--c-food);border-color:var(--c-food-b)}
+.cat-use{background:var(--c-use);border-color:var(--c-use-b)}
+.cat-weapon{background:var(--c-weapon);border-color:var(--c-weapon-b)}
+.cat-armor{background:var(--c-armor);border-color:var(--c-armor-b)}
+.cat-mat{background:var(--c-mat);border-color:var(--c-mat-b)}
+
+.cat-head{
+  display:flex;align-items:center;gap:7px;margin:14px 0 6px;font-size:11px;
+  color:var(--txt-3);letter-spacing:.06em;
+}
+.cat-head:first-child{margin-top:0}
+.cat-head .swatch{width:9px;height:9px;border-radius:2px}
+.cat-head .cap{margin-left:auto;font-family:'Rajdhani',sans-serif;font-size:12px}
+
+/* ── inventory ── */
+.inv-wrap{
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:18px;margin:0 auto;max-width:520px;
+}
+.inv{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cell{
+  aspect-ratio:1;border:1px solid var(--line);border-radius:4px;background:#11151d;
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:4px;text-align:center;font-size:11px;line-height:1.25;overflow:hidden;
+}
+.cell .key{
+  position:absolute;left:5px;top:3px;font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:13px;color:var(--txt-3);
+}
+.cell .qty{
+  position:absolute;right:5px;bottom:3px;font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:13px;color:#fff;text-shadow:0 1px 2px #000;
+}
+.cell .tag{
+  position:absolute;right:4px;top:4px;font-size:8.5px;letter-spacing:.04em;
+  padding:1px 4px;border-radius:2px;background:rgba(0,0,0,.45);color:var(--txt-2);
+}
+.cell.filled{color:#fff;font-weight:500}
+.cell.reserve{border-style:dashed;border-color:var(--line-2)}
+.cell.reserve::after{
+  content:'예비';position:absolute;bottom:5px;font-size:9.5px;color:var(--txt-3);letter-spacing:.1em;
+}
+.cell.reserve.filled::after{content:''}
+.cell.assigned{border-color:var(--line-2)}
+.cell .ghost{font-size:9.5px;color:var(--txt-3)}
+@keyframes pop{0%{box-shadow:0 0 0 0 rgba(76,196,224,.9)}100%{box-shadow:0 0 0 9px rgba(76,196,224,0)}}
+.cell.hit{animation:pop .5s ease-out}
+
+/* ── log ── */
+.log{
+  margin-top:16px;border:1px solid var(--line);border-radius:6px;background:var(--panel);
+  max-height:190px;overflow-y:auto;
+}
+.log-row{display:flex;gap:10px;padding:7px 12px;border-bottom:1px solid var(--line);font-size:12px}
+.log-row:last-child{border-bottom:0}
+.log-row .rule{
+  flex:none;font-size:10.5px;padding:1px 6px;border-radius:2px;align-self:flex-start;margin-top:2px;
+  border:1px solid;letter-spacing:.02em;
+}
+.r-assign{color:#7ee08a;border-color:#2f6b3a;background:rgba(60,140,80,.16)}
+.r-stack{color:#7fc9ea;border-color:#2e5f78;background:rgba(50,130,170,.16)}
+.r-reserve{color:#e0b45a;border-color:#7a5c20;background:rgba(180,140,50,.16)}
+.r-front{color:#f08a86;border-color:#7d3330;background:rgba(180,70,65,.16)}
+.r-fail{color:var(--txt-3);border-color:var(--line-2);background:transparent}
+.log-row .msg{color:var(--txt-2);min-width:0}
+.log-empty{padding:14px 12px;font-size:12px;color:var(--txt-3)}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:11px;color:var(--txt-3)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:2px;display:block}
+
+@media (max-width:900px){
+  .stage{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Eternal <span>Return</span> — 인벤토리 슬롯 지정</h1>
+  <p>패치 12.1 기준 · 개선안 프로토타입</p>
+</div>
+
+<div class="stage">
+
+  <!-- ══ 화면 1 : 설정 ══ -->
+  <section class="pane" aria-labelledby="p1">
+    <div class="pane-head"><span class="idx">1</span><h2 id="p1">슬롯 지정 설정</h2></div>
+    <p class="pane-sub">설정 › 게임 › 인벤토리 슬롯 지정</p>
+
+    <div class="block">
+      <label for="">슬롯 선택</label>
+      <div class="slotpick" id="slotpick"></div>
+    </div>
+
+    <div class="block">
+      <label for="major">대분류</label>
+      <select id="major"></select>
+    </div>
+
+    <div class="block">
+      <label for="minor">소분류 (선택)</label>
+      <select id="minor"></select>
+    </div>
+
+    <div class="block">
+      <label>현재 지정</label>
+      <div class="assign-list" id="assignlist"></div>
+      <div class="btn-row">
+        <button class="btn" id="preset">예시 세팅 적용</button>
+        <button class="btn" id="clearAssign">지정 전체 해제</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 화면 2 : 인벤토리 ══ -->
+  <section class="pane" aria-labelledby="p2">
+    <div class="pane-head"><span class="idx">2</span><h2 id="p2">아이템 획득 시뮬레이션</h2></div>
+    <p class="pane-sub">아이템을 클릭하면 지정 슬롯 → 예비 슬롯 → 앞 번호 순으로 배치됩니다.</p>
+
+    <div id="palette"></div>
+
+    <div class="inv-wrap" style="margin-top:20px">
+      <div class="inv" id="inv"></div>
+      <div class="legend">
+        <span><i style="background:var(--c-food)"></i>음식</span>
+        <span><i style="background:var(--c-use)"></i>사용 아이템</span>
+        <span><i style="background:var(--c-weapon)"></i>무기</span>
+        <span><i style="background:var(--c-armor)"></i>방어구</span>
+        <span><i style="background:var(--c-mat)"></i>재료</span>
+        <span><i style="border:1px dashed var(--line-2);background:transparent"></i>예비 슬롯</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="clearInv">인벤토리 비우기</button>
+        <button class="btn" id="fillRandom">무작위 10회 획득</button>
+      </div>
+    </div>
+
+    <div class="block" style="margin-top:20px">
+      <label>배치 로그</label>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const CATS = {
+  food:   {name:'음식',       cls:'cat-food',   color:'var(--c-food)',   stack:6, minors:['회복 음식','버프 음식']},
+  use:    {name:'사용 아이템', cls:'cat-use',    color:'var(--c-use)',    stack:6, minors:['정찰 드론','EMP 드론','망원 카메라','위장 카메라','전환 아이템']},
+  weapon: {name:'무기',       cls:'cat-weapon', color:'var(--c-weapon)', stack:1, minors:['권총','창','카메라']},
+  armor:  {name:'방어구',     cls:'cat-armor',  color:'var(--c-armor)',  stack:1, minors:['옷','머리','팔','다리']},
+  mat:    {name:'재료',       cls:'cat-mat',    color:'var(--c-mat)',    stack:2, minors:['일반 재료','고급 재료','희귀 재료','영웅 재료']}
+};
+
+const ITEMS = [
+  {id:'toast',  name:'토스트',       cat:'food',   minor:'회복 음식'},
+  {id:'bread',  name:'눈물젖은 빵',   cat:'food',   minor:'회복 음식'},
+  {id:'melon',  name:'수박',         cat:'food',   minor:'회복 음식'},
+  {id:'capsule',name:'캡슐',         cat:'food',   minor:'버프 음식'},
+  {id:'holy',   name:'성수',         cat:'food',   minor:'버프 음식'},
+
+  {id:'scout',  name:'정찰 드론',     cat:'use',    minor:'정찰 드론'},
+  {id:'emp',    name:'EMP 드론',      cat:'use',    minor:'EMP 드론'},
+  {id:'tele',   name:'망원 카메라',   cat:'use',    minor:'망원 카메라'},
+  {id:'cctv',   name:'위장 카메라',   cat:'use',    minor:'위장 카메라'},
+  {id:'aglaia', name:'아글라이아의 선물', cat:'use', minor:'전환 아이템'},
+  {id:'gen',    name:'휴대용 생성기', cat:'use',    minor:'전환 아이템'},
+
+  {id:'eagle',  name:'데저트 이글',   cat:'weapon', minor:'권총'},
+  {id:'spear',  name:'장창',         cat:'weapon', minor:'창'},
+  {id:'polar',  name:'폴라로이드',    cat:'weapon', minor:'카메라'},
+
+  {id:'plate',  name:'성기사의 갑옷', cat:'armor',  minor:'옷'},
+  {id:'cap',    name:'캡틴 햇',      cat:'armor',  minor:'머리'},
+  {id:'fan',    name:'백우선',       cat:'armor',  minor:'팔'},
+  {id:'boots',  name:'등산화',       cat:'armor',  minor:'다리'},
+
+  {id:'scis',   name:'가위',         cat:'mat',    minor:'일반 재료'},
+  {id:'chip',   name:'전자 부품',     cat:'mat',    minor:'고급 재료'},
+  {id:'motor',  name:'모터',         cat:'mat',    minor:'희귀 재료'},
+  {id:'meteor', name:'운석',         cat:'mat',    minor:'영웅 재료'}
+];
+
+const KEYS = ['1','2','3','4','5','6','7','8','9','0'];
+const item = id => ITEMS.find(i => i.id === id);
+
+// assign[i] = null | {cat:'food', minor:null|'회복 음식'} | {cat:'reserve'}
+let assign = Array(10).fill(null);
+let slots  = Array(10).fill(null);   // {id, qty}
+let sel    = 0;
+let logs   = [];
+
+/* ── 배치 로직 ── */
+function matches(a, it){
+  if(!a || a.cat === 'reserve') return false;
+  if(a.cat !== it.cat) return false;
+  if(a.minor && a.minor !== it.minor) return false;
+  return true;
+}
+function cap(it){ return CATS[it.cat].stack; }
+
+function place(it){
+  const limit = cap(it);
+
+  // 1. 지정 슬롯에서 같은 아이템 스택 합치기 (앞 번호 우선)
+  for(let i=0;i<10;i++){
+    if(matches(assign[i], it) && slots[i] && slots[i].id === it.id && slots[i].qty < limit){
+      slots[i].qty++;
+      return {i, rule:'stack', msg:`${it.name} → ${KEYS[i]}번 지정 슬롯에 합침 (${slots[i].qty}/${limit})`};
+    }
+  }
+  // 2. 빈 지정 슬롯 (앞 번호 우선)
+  for(let i=0;i<10;i++){
+    if(matches(assign[i], it) && !slots[i]){
+      slots[i] = {id:it.id, qty:1};
+      return {i, rule:'assign', msg:`${it.name} → ${KEYS[i]}번 지정 슬롯에 배치`};
+    }
+  }
+  // 3. 예비 슬롯 — 스택 합치기 후 빈 칸
+  for(let i=0;i<10;i++){
+    if(assign[i] && assign[i].cat === 'reserve' && slots[i] && slots[i].id === it.id && slots[i].qty < limit){
+      slots[i].qty++;
+      return {i, rule:'reserve', msg:`지정 슬롯이 가득 참 → ${KEYS[i]}번 예비 슬롯에 합침 (${slots[i].qty}/${limit})`};
+    }
+  }
+  for(let i=0;i<10;i++){
+    if(assign[i] && assign[i].cat === 'reserve' && !slots[i]){
+      slots[i] = {id:it.id, qty:1};
+      return {i, rule:'reserve', msg:`지정 슬롯이 가득 참 → ${KEYS[i]}번 예비 슬롯으로 밀림`};
+    }
+  }
+  // 4. 기존 규칙 — 같은 아이템 스택 → 앞 번호 빈 칸
+  for(let i=0;i<10;i++){
+    if(slots[i] && slots[i].id === it.id && slots[i].qty < limit){
+      slots[i].qty++;
+      return {i, rule:'front', msg:`지정 없음 → 기존 규칙으로 ${KEYS[i]}번에 합침 (${slots[i].qty}/${limit})`};
+    }
+  }
+  for(let i=0;i<10;i++){
+    if(!slots[i]){
+      slots[i] = {id:it.id, qty:1};
+      const why = assign.some(a => matches(a, it)) ? '지정·예비 슬롯이 모두 가득 참' : '지정 없음';
+      return {i, rule:'front', msg:`${why} → 앞 번호인 ${KEYS[i]}번에 배치`};
+    }
+  }
+  return {i:-1, rule:'fail', msg:`인벤토리가 가득 차 ${it.name}을(를) 획득할 수 없음`};
+}
+
+/* ── 렌더 ── */
+const $ = s => document.querySelector(s);
+
+function renderSlotPick(){
+  $('#slotpick').innerHTML = KEYS.map((k,i)=>{
+    const a = assign[i];
+    const c = a ? (a.cat === 'reserve' ? 'var(--line-2)' : CATS[a.cat].color) : 'transparent';
+    return `<button type="button" data-i="${i}" aria-pressed="${i===sel}" aria-label="슬롯 ${k}번">
+      <span class="dot" style="background:${c}"></span>${k}</button>`;
+  }).join('');
+}
+
+function renderSelectors(){
+  const a = assign[sel];
+  $('#major').innerHTML =
+    `<option value="">해당없음</option>` +
+    Object.entries(CATS).map(([k,v]) => `<option value="${k}">${v.name}</option>`).join('') +
+    `<option value="reserve">예비 슬롯</option>`;
+  $('#major').value = a ? a.cat : '';
+
+  const m = $('#minor');
+  if(a && a.cat !== 'reserve'){
+    m.disabled = false;
+    m.innerHTML = `<option value="">전체</option>` +
+      CATS[a.cat].minors.map(s => `<option value="${s}">${s}</option>`).join('');
+    m.value = a.minor || '';
+  }else{
+    m.disabled = true;
+    m.innerHTML = `<option>전체</option>`;
+  }
+}
+
+function renderAssignList(){
+  $('#assignlist').innerHTML = KEYS.map((k,i)=>{
+    const a = assign[i];
+    if(!a) return `<div class="assign-row none"><span class="n">${k}</span><span class="swatch"></span><span class="name">해당없음</span></div>`;
+    if(a.cat === 'reserve') return `<div class="assign-row"><span class="n">${k}</span><span class="swatch" style="background:var(--line-2)"></span><span class="name">예비 슬롯</span></div>`;
+    return `<div class="assign-row"><span class="n">${k}</span><span class="swatch" style="background:${CATS[a.cat].color}"></span>
+      <span class="name">${CATS[a.cat].name}${a.minor ? ` <span class="sub">› ${a.minor}</span>` : ''}</span></div>`;
+  }).join('');
+}
+
+function renderPalette(){
+  let html = '';
+  for(const [key,c] of Object.entries(CATS)){
+    html += `<div class="cat-head"><span class="swatch" style="background:${c.color}"></span>${c.name}
+      <span class="cap">1칸 ${c.stack}개</span></div><div class="palette">`;
+    html += ITEMS.filter(i => i.cat === key).map(i =>
+      `<button type="button" class="item ${c.cls}" data-id="${i.id}">${i.name}${i.minor === i.name ? '' : `<small>${i.minor}</small>`}</button>`
+    ).join('');
+    html += `</div>`;
+  }
+  $('#palette').innerHTML = html;
+}
+
+function renderInv(hit){
+  $('#inv').innerHTML = KEYS.map((k,i)=>{
+    const s = slots[i], a = assign[i];
+    const isReserve = a && a.cat === 'reserve';
+    let cls = 'cell', style = '', body = '';
+    if(isReserve) cls += ' reserve';
+    if(s){
+      const it = item(s.id), c = CATS[it.cat];
+      cls += ' filled';
+      style = `background:${c.color};border-color:var(--${c.cls.replace('cat-','c-')}-b)`;
+      body = `<span>${it.name}</span>` + (c.stack > 1 ? `<span class="qty">${s.qty}</span>` : '');
+    }else if(a && a.cat !== 'reserve'){
+      cls += ' assigned';
+      body = `<span class="ghost">${CATS[a.cat].name}${a.minor ? '<br>› '+a.minor : ''}</span>`;
+    }
+    if(i === hit) cls += ' hit';
+    return `<div class="${cls}" style="${style}"><span class="key">${k}</span>${body}</div>`;
+  }).join('');
+}
+
+function renderLog(){
+  const el = $('#log');
+  if(!logs.length){ el.innerHTML = `<div class="log-empty">아직 획득한 아이템이 없습니다.</div>`; return; }
+  const label = {assign:'지정', stack:'스택', reserve:'예비', front:'앞칸', fail:'실패'};
+  el.innerHTML = logs.map(l =>
+    `<div class="log-row"><span class="rule r-${l.rule}">${label[l.rule]}</span><span class="msg">${l.msg}</span></div>`
+  ).join('');
+}
+
+function renderAll(hit){
+  renderSlotPick(); renderSelectors(); renderAssignList(); renderInv(hit); renderLog();
+}
+
+/* ── 이벤트 ── */
+$('#slotpick').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  sel = +b.dataset.i; renderAll();
+});
+
+$('#major').addEventListener('change', e=>{
+  const v = e.target.value;
+  assign[sel] = v === '' ? null : (v === 'reserve' ? {cat:'reserve'} : {cat:v, minor:null});
+  renderAll();
+});
+
+$('#minor').addEventListener('change', e=>{
+  if(assign[sel] && assign[sel].cat !== 'reserve') assign[sel].minor = e.target.value || null;
+  renderAll();
+});
+
+$('#palette').addEventListener('click', e=>{
+  const b = e.target.closest('.item'); if(!b) return;
+  const r = place(item(b.dataset.id));
+  logs.unshift(r); logs = logs.slice(0,40);
+  renderAll(r.i);
+});
+
+$('#clearAssign').addEventListener('click', ()=>{ assign = Array(10).fill(null); renderAll(); });
+$('#clearInv').addEventListener('click', ()=>{ slots = Array(10).fill(null); logs = []; renderAll(); });
+
+$('#fillRandom').addEventListener('click', ()=>{
+  for(let n=0;n<10;n++){
+    const r = place(ITEMS[Math.floor(Math.random()*ITEMS.length)]);
+    logs.unshift(r);
+  }
+  logs = logs.slice(0,40);
+  renderAll();
+});
+
+$('#preset').addEventListener('click', ()=>{
+  assign = [
+    {cat:'food',   minor:'회복 음식'},
+    {cat:'food',   minor:'버프 음식'},
+    {cat:'use',    minor:'정찰 드론'},
+    {cat:'use',    minor:'EMP 드론'},
+    {cat:'use',    minor:'망원 카메라'},
+    {cat:'weapon', minor:null},
+    {cat:'armor',  minor:null},
+    {cat:'mat',    minor:null},
+    {cat:'reserve'},
+    null
+  ];
+  renderAll();
+});
+
+renderPalette();
+$('#preset').click();
+</script>
+</body>
+</html>
