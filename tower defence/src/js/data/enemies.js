@@ -1,0 +1,101 @@
+// ============================================================
+// enemies.js — 적 종류 정의 (1라운드 기준 수치)
+// 실제 체력/보상은 wave.js에서 라운드 배율이 곱해집니다.
+//
+// stunResist : 기절 지속시간이 이 비율만큼 줄어듭니다 (0 = 그대로 걸림)
+// ============================================================
+
+export const ENEMIES = {
+  grunt: {
+    id: 'grunt',
+    name: '일반형',
+    shape: 'circle',
+    color: '#ff5c5c',
+    hp: 40,
+    speed: 85,
+    armor: 0,
+    reward: 8,
+    radius: 12,
+  },
+  swift: {
+    id: 'swift',
+    name: '고속형',
+    shape: 'triangle',
+    color: '#ffd23d',
+    hp: 24,
+    speed: 165,
+    armor: 0,
+    reward: 10,
+    radius: 10,
+  },
+  armor: {
+    id: 'armor',
+    name: '장갑형',
+    shape: 'hexagon',
+    color: '#7f9bb5',
+    hp: 78,
+    speed: 61,
+    armor: 5,
+    reward: 14,
+    radius: 14,
+    stunResist: 0.25,
+  },
+  boss: {
+    id: 'boss',
+    name: '보스',
+    shape: 'hexagon',
+    color: '#c81e4a',
+    hp: 560,
+    speed: 54,
+    armor: 8,
+    reward: 120,
+    radius: 22,
+    isBoss: true,
+    stunResist: 0.55,
+  },
+
+  // --- 미션 전용 적 (좌측 미션 패널에서 직접 소환) ---
+  // 라이프를 깎지 않습니다. 놓치면 미션만 실패하고 다시 도전할 수 있습니다.
+  midboss: {
+    id: 'midboss',
+    name: '중간 보스',
+    shape: 'diamond',
+    color: '#4fd1a5',
+    hp: 420,
+    speed: 62,
+    armor: 4,
+    reward: 40,
+    radius: 19,
+    isBoss: true,
+    isMission: true,
+    stunResist: 0.35,
+  },
+  elite: {
+    id: 'elite',
+    name: '엘리트',
+    shape: 'star',
+    color: '#ff8ad8',
+    hp: 900,
+    speed: 78,
+    armor: 10,
+    reward: 90,
+    radius: 21,
+    isBoss: true,
+    isMission: true,
+    stunResist: 0.5,
+  },
+  gatekeeper: {
+    id: 'gatekeeper',
+    name: '문지기',
+    shape: 'shield',
+    color: '#b0a24a',
+    hp: 2000,
+    speed: 46,
+    armor: 20,
+    reward: 160,
+    radius: 25,
+    isBoss: true,
+    isMission: true,
+    stunResist: 0.65,
+  },
+};

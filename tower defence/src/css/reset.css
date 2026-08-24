@@ -1,0 +1,8 @@
+/* reset.css — 최소 리셋 */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+h1, h2, h3, p, ul, figure { margin: 0; padding: 0; }
+ul { list-style: none; }
+button { font: inherit; color: inherit; border: none; background: none; cursor: pointer; }
+canvas { display: block; }
+img { max-width: 100%; }

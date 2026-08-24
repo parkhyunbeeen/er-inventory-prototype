@@ -1,0 +1,467 @@
+/* ============================================================
+   game.css — 게임 화면 스타일
+   좌측 미션 · 중앙 게임 · 우측 강화의 3단 구성
+   ============================================================ */
+
+:root {
+  --bg: #0b0e14;
+  --panel: #151a24;
+  --panel-2: #1c2230;
+  --line: #2a3242;
+  --text: #e8eefc;
+  --muted: #8b97ad;
+  --accent: #5ddc7a;
+  --gold: #ffd23d;
+  --legend: #ffc83d;
+  --mission: #4fd1a5;
+
+  /* 게임 판(잔디) 색 — 캔버스 드로잉에서도 같은 계열을 씁니다 */
+  --field: #16301f;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+  padding: 18px 12px 48px;
+}
+
+/* --- 3단 레이아웃 --- */
+.layout {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 768px) 236px;
+  gap: 12px;
+  justify-content: center;
+  align-items: start;
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* --- 사이드 패널 --- */
+.side {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  position: sticky;
+  top: 18px;
+}
+.side-title { font-size: 15px; font-weight: 700; }
+.side-sub { font-size: 11px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+.side-sub b { color: var(--text); }
+.card-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+
+/* 미션 / 강화 카드 공통 */
+.card {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+.card-top { display: flex; align-items: center; gap: 6px; }
+.card-name { font-size: 13px; font-weight: 700; flex: 1; }
+.card-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.card-meta { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.card-meta b { color: var(--text); font-variant-numeric: tabular-nums; }
+.card-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  transition: filter .12s;
+}
+.card-btn:hover:not(:disabled) { filter: brightness(1.35); }
+.card-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* 미션 상태별 강조 */
+.card.ready { border-color: var(--mission); }
+.card.ready .card-tag { color: var(--mission); border-color: var(--mission); }
+.card.ready .card-btn { background: #14382f; border-color: #2f7a63; color: var(--mission); }
+.card.active { border-color: var(--gold); }
+.card.active .card-tag { color: var(--gold); border-color: var(--gold); }
+.card.done { opacity: .55; }
+
+/* 강화 진행 바 */
+.bar { height: 5px; background: #10141c; border-radius: 3px; margin-top: 7px; overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 3px; }
+
+/* --- 상단 HUD --- */
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.hud-item { display: flex; align-items: baseline; gap: 6px; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hud-item .ico { font-size: 15px; }
+.hud-item small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.hud-cost {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 11px;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.hud-cost b { color: var(--gold); font-variant-numeric: tabular-nums; }
+/* 골드가 모자라면 붉게 — 지금은 소환할 수 없다는 신호 */
+.hud-cost.short { border-color: #8a3a4c; color: #ff9aa5; }
+.hud-cost.short b { color: #ff8a8a; }
+
+.hud-spacer { flex: 1; }
+.hud-stats { font-size: 11px; color: var(--muted); }
+
+/* --- 설정(톱니바퀴) 버튼 --- */
+.gear {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: transform .25s, color .15s, border-color .15s;
+}
+.gear:hover { color: var(--text); border-color: #4a5568; transform: rotate(60deg); }
+.gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- 게임 캔버스 --- */
+.stage {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  line-height: 0;
+}
+#game { width: 100%; height: auto; cursor: pointer; }
+
+/* --- 버튼 --- */
+.actions { display: flex; gap: 8px; }
+.btn {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  font-size: 14px;
+  font-weight: 600;
+  transition: filter .12s, opacity .12s;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.25); }
+.btn:disabled { opacity: .38; cursor: not-allowed; }
+.btn.primary { background: #1f3a2a; border-color: #2f6b45; }
+.btn.legend  { background: #4a3a12; border-color: #a78230; color: var(--legend); }
+.btn.danger  { background: #43202a; border-color: #8a3a4c; }
+.btn.ghost   { background: transparent; }
+.btn.speed   { flex: 0 0 118px; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.btn.speed.active { background: #3a2a12; border-color: #a78230; color: var(--gold); }
+
+/* --- 선택 정보 패널 --- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-height: 132px;
+}
+.panel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.panel-head h2 { font-size: 16px; font-weight: 700; }
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #10141c;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.badge:empty { display: none; }
+.stats { font-size: 13px; color: #c4cfe2; }
+.stats b { color: var(--text); }
+.desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+/* 등급별 합성 버튼 줄 */
+.merge-row { display: flex; gap: 8px; margin-top: 10px; }
+.merge-row:empty { display: none; }
+.merge-btn {
+  flex: 1;
+  padding: 9px 6px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  transition: filter .12s;
+}
+.merge-btn:hover:not(:disabled) { filter: brightness(1.3); }
+.merge-btn:disabled { opacity: .4; cursor: not-allowed; }
+.merge-btn small {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.merge-btn.ready small { color: inherit; opacity: .8; }
+
+.panel-actions { display: flex; gap: 8px; margin-top: 8px; }
+.panel-actions .btn[hidden] { display: none; }
+.panel-actions:empty { display: none; }
+
+/* 판매 줄 — 합성 버튼과 확실히 떼어 놓습니다 (오클릭 방지) */
+.sell-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.sell-row:has(.btn[hidden]) { display: none; }
+.btn.sell {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.btn.sell:hover:not(:disabled) { color: var(--text); border-color: #4a5568; filter: none; }
+/* 한 번 누른 뒤 — 확인 대기 상태 */
+.btn.sell.armed {
+  background: #43202a;
+  border-color: #c04a60;
+  color: #ffb3bf;
+  animation: sellPulse 1s ease-in-out infinite;
+}
+@keyframes sellPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192,74,96,0); }
+  50%      { box-shadow: 0 0 0 4px rgba(192,74,96,0.28); }
+}
+@media (prefers-reduced-motion: reduce) { .btn.sell.armed { animation: none; } }
+
+/* --- 도움말 --- */
+.help { font-size: 12.5px; color: var(--muted); }
+.help details {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+}
+.help summary { cursor: pointer; font-weight: 600; color: #b9c5d8; }
+.help ul { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+.help li { line-height: 1.5; }
+.help li::before { content: "· "; color: var(--muted); }
+.help b { color: var(--text); }
+kbd {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+}
+
+/* --- 반응형 --- */
+@media (max-width: 1290px) {
+  .layout { grid-template-columns: minmax(0, 768px); }
+  .side { position: static; }
+  .card-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+}
+@media (max-width: 560px) {
+  .btn.speed { flex: 1; }
+  .hud { gap: 12px; flex-wrap: wrap; }
+  .hud-stats { display: none; }
+  .hud-cost { order: 9; }
+  .actions { flex-direction: column; }
+  .merge-row { flex-wrap: wrap; }
+}
+
+
+/* ============================================================
+   타이틀 화면
+   ============================================================ */
+.title-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #1b3a28 0%, transparent 60%),
+    radial-gradient(90% 70% at 50% 100%, #131a2a 0%, transparent 55%),
+    var(--bg);
+  z-index: 50;
+}
+.title-screen[hidden] { display: none; }
+
+.title-inner {
+  width: min(520px, 100%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: titleIn .5s ease-out;
+}
+@keyframes titleIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-inner { animation: none; }
+  .gear { transition: none; }
+}
+
+.title-eyebrow {
+  font-size: 11px;
+  letter-spacing: .22em;
+  color: var(--accent);
+  font-weight: 700;
+}
+.title-name {
+  font-size: clamp(32px, 7vw, 46px);
+  font-weight: 800;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+.title-desc {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--muted);
+}
+.title-desc b { color: var(--text); }
+
+.title-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+.title-btn {
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  font-size: 15px;
+  font-weight: 700;
+  transition: filter .12s, transform .12s;
+}
+.title-btn:hover { filter: brightness(1.3); transform: translateY(-1px); }
+.title-btn.primary { background: #1f3a2a; border-color: #3d8759; color: #b6f2ce; }
+.title-foot { font-size: 11px; color: #5d6a80; margin-top: 6px; }
+
+/* ============================================================
+   설정 모달 (타이틀 / 인게임 공용)
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 9, 14, 0.78);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 60;
+}
+.modal-backdrop[hidden] { display: none; }
+
+.modal {
+  width: min(400px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: modalIn .18s ease-out;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
+
+.modal-head { display: flex; align-items: center; }
+.modal-head h2 { font-size: 17px; font-weight: 700; flex: 1; }
+.modal-x {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.modal-x:hover { background: var(--panel-2); color: var(--text); }
+
+.modal-body { display: flex; flex-direction: column; gap: 6px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field-label { font-size: 13px; font-weight: 600; color: #c4cfe2; }
+.field-label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.field-hint { font-size: 11px; color: var(--muted); }
+
+/* 사운드 슬라이더 */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #0d1117;
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #0d1117;
+  cursor: pointer;
+}
+input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.modal-actions { display: flex; gap: 8px; }
+.modal-actions .btn[hidden] { display: none; }
+
+/* 확인(경고) 팝업 */
+.modal-warn { border-color: #8a6a2f; }
+.modal-warn .modal-head h2 { color: var(--gold); }
+.confirm-msg {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: #c4cfe2;
+}
+.confirm-msg b { color: var(--gold); font-variant-numeric: tabular-nums; }
+.confirm-msg .warn { color: #ff9aa5; font-weight: 700; }
