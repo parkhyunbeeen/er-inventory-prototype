@@ -1,1 +1,0 @@
-# er-inventory-prototype
